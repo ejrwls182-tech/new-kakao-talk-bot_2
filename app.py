@@ -6,7 +6,8 @@
     - "오늘 강의"        -> 오늘 일정
     - "내일 강의"        -> 내일 일정
     - "6/22 강의" / "6월 22일 강의" / "2026-06-22 강의" -> 해당 날짜 일정
-    - "이번주 해야할일" / "이번주 할일" -> 이번 주(월~일) 안에 마감인 [제출] 항목들
+    - "이번주 해야할일" / "이번주 할일" -> 이번 주(월~일) 안에 마감인 제출/마감 항목들
+    - "다음주 해야할일" / "다음주 할일" -> 다음 주(월~일) 안에 마감인 제출/마감 항목들
 
 실행:
     pip install -r requirements.txt
@@ -53,6 +54,12 @@ DATE_PATTERNS = [
     re.compile(r"(\d{1,2})[.\-/월]\s*(\d{1,2})"),                    # MM-DD (올해 기준)
 ]
 
+WEEKDAY_NAME_TO_INDEX = {
+    "월요일": 0, "화요일": 1, "수요일": 2, "목요일": 3,
+    "금요일": 4, "토요일": 5, "일요일": 6,
+    "월": 0, "화": 1, "수": 2, "목": 3, "금": 4, "토": 5, "일": 6,
+}
+
 
 def parse_date_from_text(text, base_date):
     """발화 텍스트에서 날짜를 추출. 못 찾으면 None."""
@@ -64,6 +71,19 @@ def parse_date_from_text(text, base_date):
         return base_date + timedelta(days=2)
     if "오늘" in text:
         return base_date
+
+    # "이번주 금요일", "다음주 월요일" 등
+    week_offset = None
+    if "다음주" in text or "다음 주" in text:
+        week_offset = 1
+    elif "이번주" in text or "이번 주" in text:
+        week_offset = 0
+
+    if week_offset is not None:
+        for name, idx in WEEKDAY_NAME_TO_INDEX.items():
+            if name in text:
+                monday = base_date - timedelta(days=base_date.weekday())
+                return monday + timedelta(days=idx + 7 * week_offset)
 
     for pattern in DATE_PATTERNS:
         m = pattern.search(text)
@@ -103,13 +123,13 @@ def get_day_text(target_date):
     return f"{header}\n\n{body}"
 
 
-def get_week_deadlines_text(base_date):
+def get_week_deadlines_text(base_date, label="이번 주"):
     """base_date가 속한 주(월~일)에 마감되는 [제출] 항목 정리"""
     schedule = load_schedule()
 
     monday = base_date - timedelta(days=base_date.weekday())
     sunday = monday + timedelta(days=6)
-    header = f"🗒 이번 주({monday.strftime('%m.%d')}~{sunday.strftime('%m.%d')}) 제출/마감 일정"
+    header = f"🗒 {label}({monday.strftime('%m.%d')}~{sunday.strftime('%m.%d')}) 제출/마감 일정"
 
     lines = []
     seen = set()
@@ -126,7 +146,7 @@ def get_week_deadlines_text(base_date):
                 lines.append(f"• {d.strftime('%m.%d')}({weekday_kr}) {s}")
 
     if not lines:
-        body = "이번 주에는 별도의 제출/마감 일정이 없습니다."
+        body = f"{label}에는 별도의 제출/마감 일정이 없습니다."
     else:
         body = "\n".join(lines)
 
@@ -155,7 +175,13 @@ def skill():
     base_date = today_kst()
 
     if "할일" in utterance.replace(" ", "") or "할 일" in utterance:
-        text = get_week_deadlines_text(base_date)
+        if "다음주" in utterance or "다음 주" in utterance:
+            target_week_date = base_date + timedelta(days=7)
+            label = "다음 주"
+        else:
+            target_week_date = base_date
+            label = "이번 주"
+        text = get_week_deadlines_text(target_week_date, label=label)
     else:
         target_date = parse_date_from_text(utterance, base_date)
         if target_date is None:
