@@ -112,12 +112,16 @@ def get_week_deadlines_text(base_date):
     header = f"🗒 이번 주({monday.strftime('%m.%d')}~{sunday.strftime('%m.%d')}) 제출/마감 일정"
 
     lines = []
+    seen = set()
     for i in range(7):
         d = monday + timedelta(days=i)
         date_key = d.strftime("%Y-%m-%d")
         sessions = schedule.get(date_key, [])
         for s in sessions:
-            if "[제출]" in s or "마감" in s:
+            if "제출" in s or "마감" in s:
+                if s in seen:
+                    continue
+                seen.add(s)
                 weekday_kr = WEEKDAY_KR[d.weekday()]
                 lines.append(f"• {d.strftime('%m.%d')}({weekday_kr}) {s}")
 
