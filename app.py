@@ -8,6 +8,9 @@
     - "6/22 강의" / "6월 22일 강의" / "2026-06-22 강의" -> 해당 날짜 일정
     - "이번주 해야할일" / "이번주 할일" -> 이번 주(월~일) 안에 마감인 제출/마감 항목들
     - "다음주 해야할일" / "다음주 할일" -> 다음 주(월~일) 안에 마감인 제출/마감 항목들
+    - "오늘 식단"       -> 오늘 아침/점심/저녁 식단
+    - "내일 식단"       -> 내일 식단
+    - "이번주 식단" / "다음주 식단" -> 해당 주(월~금) 전체 식단
 
 실행:
     pip install -r requirements.txt
@@ -31,12 +34,21 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 SCHEDULE_PATH = os.path.join(os.path.dirname(__file__), "schedule.json")
+MEALS_PATH = os.path.join(os.path.dirname(__file__), "meals.json")
 KST = ZoneInfo("Asia/Seoul")
 WEEKDAY_KR = ["월", "화", "수", "목", "금", "토", "일"]
+MEAL_LABELS = [("breakfast", "🍚 아침"), ("lunch", "🍱 점심"), ("dinner", "🍲 저녁")]
 
 
 def load_schedule():
     with open(SCHEDULE_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_meals():
+    if not os.path.exists(MEALS_PATH):
+        return {}
+    with open(MEALS_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -153,6 +165,57 @@ def get_week_deadlines_text(base_date, label="이번 주"):
     return f"{header}\n\n{body}"
 
 
+def get_day_meal_text(target_date):
+    meals = load_meals()
+    date_key = target_date.strftime("%Y-%m-%d")
+    weekday_kr = WEEKDAY_KR[target_date.weekday()]
+    header = f"🍽 {target_date.strftime('%Y.%m.%d')}({weekday_kr}) 식단"
+
+    day_meals = meals.get(date_key)
+
+    if not day_meals:
+        body = "해당 날짜의 식단 정보가 없습니다."
+    else:
+        lines = []
+        for key, label in MEAL_LABELS:
+            menu = day_meals.get(key)
+            if menu:
+                lines.append(f"{label}\n{menu}")
+        body = "\n\n".join(lines) if lines else "해당 날짜의 식단 정보가 없습니다."
+
+    return f"{header}\n\n{body}"
+
+
+def get_week_meal_text(base_date, label="이번 주"):
+    """base_date가 속한 주(월~금)의 식단 정리"""
+    meals = load_meals()
+    monday = base_date - timedelta(days=base_date.weekday())
+    friday = monday + timedelta(days=4)
+    header = f"🍽 {label}({monday.strftime('%m.%d')}~{friday.strftime('%m.%d')}) 식단"
+
+    blocks = []
+    for i in range(5):
+        d = monday + timedelta(days=i)
+        date_key = d.strftime("%Y-%m-%d")
+        day_meals = meals.get(date_key)
+        if not day_meals:
+            continue
+        weekday_kr = WEEKDAY_KR[d.weekday()]
+        lines = [f"[{d.strftime('%m.%d')}({weekday_kr})]"]
+        for key, mlabel in MEAL_LABELS:
+            menu = day_meals.get(key)
+            if menu:
+                lines.append(f"{mlabel}: {menu}")
+        blocks.append("\n".join(lines))
+
+    if not blocks:
+        body = f"{label}에는 등록된 식단 정보가 없습니다."
+    else:
+        body = "\n\n".join(blocks)
+
+    return f"{header}\n\n{body}"
+
+
 # ---------------------------------------------------------------------------
 # 라우트
 # ---------------------------------------------------------------------------
@@ -182,6 +245,16 @@ def skill():
             target_week_date = base_date
             label = "이번 주"
         text = get_week_deadlines_text(target_week_date, label=label)
+    elif "식단" in utterance:
+        if "이번주" in utterance or "이번 주" in utterance:
+            text = get_week_meal_text(base_date, label="이번 주")
+        elif "다음주" in utterance or "다음 주" in utterance:
+            text = get_week_meal_text(base_date + timedelta(days=7), label="다음 주")
+        else:
+            target_date = parse_date_from_text(utterance, base_date)
+            if target_date is None:
+                target_date = base_date
+            text = get_day_meal_text(target_date)
     else:
         target_date = parse_date_from_text(utterance, base_date)
         if target_date is None:
@@ -201,6 +274,42 @@ def skill():
         }
     }
     return jsonify(response)
+
+
+@app.route("/admin/update-meals", methods=["POST"])
+def admin_update_meals():
+    """수동/원격으로 식단 자동 갱신을 트리거 (update_meals.py의 main 로직 재사용).
+    Authorization 헤더에 ADMIN_TOKEN 환경변수 값을 그대로 보내야 동작합니다.
+    """
+    token = os.environ.get("ADMIN_TOKEN")
+    if not token or request.headers.get("Authorization") != token:
+        return jsonify({"error": "unauthorized"}), 401
+
+    from update_meals import auto_update
+
+    try:
+        result = auto_update()
+        return jsonify({"status": "ok", "result": result})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+def _start_scheduler():
+    if os.environ.get("DISABLE_MEAL_SCHEDULER") == "1":
+        return
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from update_meals import auto_update
+    except ImportError:
+        return
+
+    scheduler = BackgroundScheduler(timezone=KST)
+    # 매주 월요일 09:30(KST)에 식단 PDF 자동 갱신 시도
+    scheduler.add_job(auto_update, "cron", day_of_week="mon", hour=9, minute=30)
+    scheduler.start()
+
+
+_start_scheduler()
 
 
 if __name__ == "__main__":
