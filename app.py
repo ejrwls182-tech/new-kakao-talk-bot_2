@@ -305,7 +305,7 @@ def _start_scheduler():
 
     scheduler = BackgroundScheduler(timezone=KST)
     # 매주 월요일 09:30(KST)에 식단 PDF 자동 갱신 시도
-    scheduler.add_job(auto_update, "cron", day_of_week="mon", hour=9, minute=30)
+    scheduler.add_job(auto_update, "cron", day_of_week="mon", hour=10, minute=30)
     scheduler.start()
 
 
