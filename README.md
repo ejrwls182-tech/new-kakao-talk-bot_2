@@ -21,29 +21,22 @@
 
 ## 5. 식단(meals.json) 갱신
 NHI 사이트(https://www.nhi.go.kr/Introduce/introduce7/week/List.htm)는 매주 월요일 오전
-"주간식단계획" 게시글에 PDF로 식단표를 올립니다. 이 PDF를 파싱해 `meals.json`을 갱신합니다.
+"주간식단계획" 게시글에 PDF로 식단표를 올립니다. NHI 사이트는 자동 다운로드를 차단하므로,
+매주 PDF를 직접 받아서 아래처럼 `meals.json`을 갱신해야 합니다.
 
-### 자동 갱신
-- 서버가 켜져 있는 동안, 매주 월요일 10:30(KST)에 자동으로 NHI 사이트에서 최신 PDF를 받아
-  `meals.json`을 갱신하려고 시도합니다 (`app.py`의 APScheduler 작업).
-- NHI 사이트가 자동 다운로드를 차단(400 Bad Request)하는 경우가 있어, 실패할 수도 있습니다.
-  이때는 아래 "수동 갱신"을 사용하세요.
-- 자동 갱신 비활성화: 환경변수 `DISABLE_MEAL_SCHEDULER=1`
-- 원격으로 즉시 갱신 트리거: 환경변수 `ADMIN_TOKEN` 설정 후
-  `POST /admin/update-meals` (헤더 `Authorization: <ADMIN_TOKEN>`)
-
-### 수동 갱신
-1. NHI 홈페이지 → "주간식단" 게시판에서 최신 PDF 다운로드
+1. NHI 홈페이지 → "주간식단" 게시판에서 이번 주 PDF 다운로드
 2. 아래 명령 실행:
    ```
-   python update_meals.py --pdf "주간식단계획(6.8~6.12).pdf"
+   python update_meals.py --pdf "주간식단계획(6.15~6.19).pdf"
    ```
-3. PDF의 표 형식이 예상과 다르면 먼저 `--dry-run`으로 추출 결과를 확인:
-   ```
-   python update_meals.py --pdf "주간식단계획(6.8~6.12).pdf" --dry-run
-   ```
-   결과가 이상하면 `update_meals.py`의 `parse_table_to_meals()` 함수를 PDF의 실제
-   표 구조(헤더 날짜 표기, 조식/중식/석식 행 이름 등)에 맞게 조정하세요.
+3. 변경된 `meals.json`을 커밋/푸시하면 Render가 자동 재배포합니다.
+
+PDF의 표 형식이 예상과 다르면 먼저 `--dry-run`으로 추출 결과를 확인:
+```
+python update_meals.py --pdf "주간식단계획(6.15~6.19).pdf" --dry-run
+```
+결과가 이상하면 `update_meals.py`의 `parse_table_to_meals()` 함수를 PDF의 실제
+표 구조(헤더의 끼니 이름, 날짜 표기 등)에 맞게 조정하세요.
 
 ## 1. 서버 배포 (예: Render.com 무료 플랜)
 오픈빌더가 스킬을 호출하려면 **인터넷에서 접근 가능한 HTTPS URL**이 필요합니다. 로컬 PC만으로는 안 됩니다.

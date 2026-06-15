@@ -135,51 +135,53 @@ def extract_table(pdf_path):
 def parse_table_to_meals(table, year):
     """표(2차원 리스트)를 {YYYY-MM-DD: {breakfast, lunch, dinner}} 형태로 변환.
 
-    가정하는 표 형식 (요일별 식단표의 일반적인 형태):
-        헤더 행: ["구분", "6.8(월)", "6.9(화)", "6.10(수)", "6.11(목)", "6.12(금)"]
-        이후 행: ["조식", "...메뉴...", "...", "...", "...", "..."]
-                 ["중식", ...]
-                 ["석식", ...]
+    실제 NHI 주간식단 PDF의 표 형식 (날짜가 행, 끼니가 열):
+        헤더 행: ["2026", "아 침", "점 심", "저 녁"]
+        이후 행: ["6/15\n(월)", "...아침메뉴...", "...점심메뉴...", "...저녁메뉴..."]
+                 ["6/16\n(화)", ...]
+                 ...
 
     PDF 형식이 다르면 이 함수를 PDF 구조에 맞게 수정하세요.
     """
     header = table[0]
-    date_cols = {}  # column index -> date object
+    meal_cols = {}  # column index -> "breakfast" / "lunch" / "dinner"
     for idx, cell in enumerate(header):
         if not cell:
             continue
-        m = DATE_HEADER_PATTERN.search(cell.replace("\n", " "))
-        if m:
-            month, day = int(m.group(1)), int(m.group(2))
-            try:
-                date_cols[idx] = datetime(year, month, day).date()
-            except ValueError:
-                continue
+        cell_norm = cell.replace(" ", "").replace("\n", "")
+        for key, keywords in MEAL_ROW_KEYWORDS.items():
+            if any(kw.replace(" ", "") in cell_norm for kw in keywords):
+                meal_cols[idx] = key
+                break
 
-    if not date_cols:
-        raise RuntimeError("표 헤더에서 날짜를 찾지 못했습니다. 표 형식을 확인하세요.")
+    if not meal_cols:
+        raise RuntimeError("표 헤더에서 아침/점심/저녁 열을 찾지 못했습니다. 표 형식을 확인하세요.")
 
     meals = {}
     for row in table[1:]:
         if not row or not row[0]:
             continue
-        row_label = row[0].replace("\n", " ").strip()
-        meal_key = None
-        for key, keywords in MEAL_ROW_KEYWORDS.items():
-            if any(kw in row_label for kw in keywords):
-                meal_key = key
-                break
-        if not meal_key:
+        m = DATE_HEADER_PATTERN.search(row[0].replace("\n", " "))
+        if not m:
             continue
+        month, day = int(m.group(1)), int(m.group(2))
+        try:
+            date_obj = datetime(year, month, day).date()
+        except ValueError:
+            continue
+        date_key = date_obj.strftime("%Y-%m-%d")
 
-        for idx, date_obj in date_cols.items():
+        for idx, meal_key in meal_cols.items():
             if idx >= len(row) or not row[idx]:
                 continue
-            menu_text = re.sub(r"\n+", ", ", row[idx].strip())
+            cell_text = row[idx].strip()
+            if "잔반" in cell_text or cell_text.startswith("※"):
+                continue
+            menu_text = re.sub(r"\n+", ", ", cell_text)
             menu_text = re.sub(r"\s{2,}", " ", menu_text)
+            menu_text = re.sub(r",?\s*\(\d+\)\s*$", "", menu_text)  # 끝의 칼로리 표기 제거
             if not menu_text:
                 continue
-            date_key = date_obj.strftime("%Y-%m-%d")
             meals.setdefault(date_key, {})[meal_key] = menu_text
 
     if not meals:

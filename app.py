@@ -276,42 +276,6 @@ def skill():
     return jsonify(response)
 
 
-@app.route("/admin/update-meals", methods=["POST"])
-def admin_update_meals():
-    """수동/원격으로 식단 자동 갱신을 트리거 (update_meals.py의 main 로직 재사용).
-    Authorization 헤더에 ADMIN_TOKEN 환경변수 값을 그대로 보내야 동작합니다.
-    """
-    token = os.environ.get("ADMIN_TOKEN")
-    if not token or request.headers.get("Authorization") != token:
-        return jsonify({"error": "unauthorized"}), 401
-
-    from update_meals import auto_update
-
-    try:
-        result = auto_update()
-        return jsonify({"status": "ok", "result": result})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-def _start_scheduler():
-    if os.environ.get("DISABLE_MEAL_SCHEDULER") == "1":
-        return
-    try:
-        from apscheduler.schedulers.background import BackgroundScheduler
-        from update_meals import auto_update
-    except ImportError:
-        return
-
-    scheduler = BackgroundScheduler(timezone=KST)
-    # 매주 월요일 09:30(KST)에 식단 PDF 자동 갱신 시도
-    scheduler.add_job(auto_update, "cron", day_of_week="mon", hour=10, minute=30)
-    scheduler.start()
-
-
-_start_scheduler()
-
-
 if __name__ == "__main__":
     # 로컬 테스트용. 배포 시에는 gunicorn 등 WSGI 서버 사용 권장.
     port = int(os.environ.get("PORT", 5000))
