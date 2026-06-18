@@ -270,6 +270,33 @@ const kstToday = () => {
 
 function isDeadline(s){ return s.includes('제출') || s.includes('마감'); }
 
+// 항목 텍스트에서 실제 마감일(YYYY-MM-DD)을 추출. "M.D.(요일) ...까지" 형태가 있으면 그 날짜,
+// 없으면(시간만 "23:59까지" 등) 항목이 적힌 날짜를 마감일로 본다.
+function dueKeyOf(text, listed){
+  const m = text.match(/(\d{1,2})[.\/](\d{1,2})\s*\.?\s*\([월화수목금토일]\)\s*[\d:]*\s*까지/);
+  if(m) return `${listed.getFullYear()}-${pad(+m[1])}-${pad(+m[2])}`;
+  return keyOf(listed);
+}
+
+// schedule 전체를 훑어 실제 마감일 기준으로 정렬된 마감 목록을 만든다(중복 제거).
+let DEADLINES = [];
+function buildDeadlineIndex(){
+  const seen = new Set();
+  DEADLINES = [];
+  for(const k in DATA.schedule){
+    const listed = parseKey(k);
+    for(const s of DATA.schedule[k]){
+      if(!isDeadline(s)) continue;
+      const dk = dueKeyOf(s, listed);
+      const id = dk + '|' + s;
+      if(seen.has(id)) continue;
+      seen.add(id);
+      DEADLINES.push({ key: dk, date: parseKey(dk), text: s });
+    }
+  }
+  DEADLINES.sort((a,b)=> a.key<b.key?-1:a.key>b.key?1:0);
+}
+
 function parseSession(s){
   const tm = s.match(/(\d{1,2}:\d{2}\s*~\s*\d{1,2}:\d{2})/);
   let time = tm ? tm[1].replace(/\s+/g,'') : '';
@@ -329,66 +356,52 @@ function emptyBlock(text, icon){
 }
 
 function renderLecture(){
-  const sessions = DATA.schedule[keyOf(cur)];
+  const k = keyOf(cur);
+  const sessions = DATA.schedule[k];
+  const lectures = sessions ? sessions.filter(s=>!isDeadline(s)) : [];
+  const todayDue = DEADLINES.filter(d=>d.key===k);   // 실제 마감일이 오늘인 항목만
   let html = '';
-  if(sessions === undefined){
-    html = emptyBlock('교육 기간에 포함되지 않은 날짜입니다.');
-  } else {
-    const lectures = sessions.filter(s=>!isDeadline(s));
-    const deadlines = sessions.filter(isDeadline);
-    if(lectures.length === 0 && deadlines.length === 0){
-      html = emptyBlock('이 날은 별도의 강의가 없습니다.');
-    } else {
-      if(lectures.length){
-        html += `<div class="card"><div class="card-head">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span class="card-title">강의 일정</span><span class="card-count">${lectures.length}개</span></div>`;
-        for(const s of lectures){
-          const {name,time} = parseSession(s);
-          html += `<div class="session"><div class="session-name">${esc(name)}</div>`;
-          if(time) html += `<div class="session-time"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>${esc(time)}</div>`;
-          html += `</div>`;
-        }
-        html += `</div>`;
-      }
-      if(deadlines.length){
-        html += `<div class="card"><div class="card-head">
-          <svg viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
-          <span class="card-title">오늘 마감</span></div>`;
-        for(const s of deadlines){
-          html += `<div class="session"><div class="session-name">${esc(s)}</div></div>`;
-        }
-        html += `</div>`;
-      }
+
+  if(lectures.length){
+    html += `<div class="card"><div class="card-head">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="card-title">강의 일정</span><span class="card-count">${lectures.length}개</span></div>`;
+    for(const s of lectures){
+      const {name,time} = parseSession(s);
+      html += `<div class="session"><div class="session-name">${esc(name)}</div>`;
+      if(time) html += `<div class="session-time"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>${esc(time)}</div>`;
+      html += `</div>`;
     }
+    html += `</div>`;
   }
 
-  const upcoming = upcomingDeadlines(cur, 14);
+  if(todayDue.length){
+    html += `<div class="card"><div class="card-head">
+      <svg viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <span class="card-title">오늘 마감</span></div>`;
+    for(const d of todayDue) html += `<div class="session"><div class="session-name">${esc(d.text)}</div></div>`;
+    html += `</div>`;
+  }
+
+  if(!lectures.length && !todayDue.length){
+    html += sessions===undefined ? emptyBlock('교육 기간에 포함되지 않은 날짜입니다.') : emptyBlock('이 날은 별도의 강의가 없습니다.');
+  }
+
+  const upcoming = DEADLINES
+    .map(d=>({ ...d, diff: Math.round((d.date - cur)/86400000) }))
+    .filter(d=> d.diff>=1 && d.diff<=14)
+    .slice(0,5);
   if(upcoming.length){
     html += `<div class="card"><div class="card-head">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
       <span class="card-title">다가오는 마감</span></div>`;
     for(const u of upcoming){
-      const dd = u.diff===0 ? 'D-day' : `D-${u.diff}`;
-      html += `<div class="deadline-row"><div class="dl-date">${u.md}<br><span style="color:var(--text-ter);font-weight:500">${WD[u.date.getDay()]}</span></div>
-        <div class="dl-text">${esc(u.text)}<br><span class="badge">${dd}</span></div></div>`;
+      html += `<div class="deadline-row"><div class="dl-date">${u.date.getMonth()+1}.${pad(u.date.getDate())}<br><span style="color:var(--text-ter);font-weight:500">${WD[u.date.getDay()]}</span></div>
+        <div class="dl-text">${esc(u.text)}<br><span class="badge">D-${u.diff}</span></div></div>`;
     }
     html += `</div>`;
   }
   $('#pane-lecture').innerHTML = html;
-}
-
-function upcomingDeadlines(from, days){
-  const out = [];
-  for(let i=1;i<=days;i++){
-    const d = addDays(from,i);
-    const ss = DATA.schedule[keyOf(d)];
-    if(!ss) continue;
-    for(const s of ss){
-      if(isDeadline(s)) out.push({date:d, diff:i, md:`${d.getMonth()+1}.${pad(d.getDate())}`, text:s});
-    }
-  }
-  return out.slice(0,5);
 }
 
 let mealMode = 'day';
@@ -441,21 +454,12 @@ function renderMeal(){
 }
 
 function weekDeadlines(weekDate){
-  const mon = mondayOf(weekDate);
-  const out = [];
-  const seen = new Set();
-  for(let i=0;i<7;i++){
-    const d = addDays(mon,i);
-    const ss = DATA.schedule[keyOf(d)];
-    if(!ss) continue;
-    for(const s of ss){
-      if(isDeadline(s) && !seen.has(s)){
-        seen.add(s);
-        out.push({md:`${d.getMonth()+1}.${pad(d.getDate())}`, wd:WD[d.getDay()], text:s});
-      }
-    }
-  }
-  return {mon, sun:addDays(mon,6), items:out};
+  const mon = mondayOf(weekDate), sun = addDays(mon,6);
+  const mk = keyOf(mon), sk = keyOf(sun);
+  const items = DEADLINES
+    .filter(d=> d.key>=mk && d.key<=sk)   // 실제 마감일이 이번 주에 드는 항목
+    .map(d=>({ md:`${d.date.getMonth()+1}.${pad(d.date.getDate())}`, wd:WD[d.date.getDay()], text:d.text }));
+  return { mon, sun, items };
 }
 
 function renderTodo(){
@@ -691,6 +695,7 @@ async function init(){
     const meals = await mRes.json();
     delete meals._comment;
     DATA = { schedule, meals };
+    buildDeadlineIndex();
     serverToday = kstToday();
     cur = new Date(serverToday);
     buildStrip();
