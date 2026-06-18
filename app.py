@@ -231,6 +231,16 @@ def index():
     return send_from_directory(os.path.dirname(__file__), "index.html")
 
 
+@app.route("/schedule.json", methods=["GET"])
+def schedule_json():
+    return send_from_directory(os.path.dirname(__file__), "schedule.json")
+
+
+@app.route("/meals.json", methods=["GET"])
+def meals_json():
+    return send_from_directory(os.path.dirname(__file__), "meals.json")
+
+
 @app.route("/api/data", methods=["GET"])
 def api_data():
     """웹앱용 데이터 일괄 제공 (강의 일정 + 식단 + 서버 기준 오늘 날짜).

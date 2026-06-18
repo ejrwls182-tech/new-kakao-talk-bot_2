@@ -170,6 +170,12 @@ const sameDay = (a,b) => keyOf(a)===keyOf(b);
 const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
 const mondayOf = d => { const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); return x; };
 const esc = s => s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+// 한국시간(KST, UTC+9) 기준 오늘 날짜를 로컬 자정 Date로 반환
+const kstToday = () => {
+  const now = new Date();
+  const kst = new Date(now.getTime() + now.getTimezoneOffset()*60000 + 9*3600000);
+  return new Date(kst.getFullYear(), kst.getMonth(), kst.getDate());
+};
 
 function isDeadline(s){ return s.includes('제출') || s.includes('마감'); }
 
@@ -407,9 +413,16 @@ $('#todayBtn').onclick = ()=>{ cur = new Date(serverToday); renderAll(); };
 
 async function init(){
   try{
-    const res = await fetch('/api/data');
-    DATA = await res.json();
-    serverToday = parseKey(DATA.today);
+    const bust = '?t=' + Date.now();
+    const [sRes, mRes] = await Promise.all([
+      fetch('schedule.json' + bust),
+      fetch('meals.json' + bust),
+    ]);
+    const schedule = await sRes.json();
+    const meals = await mRes.json();
+    delete meals._comment;
+    DATA = { schedule, meals };
+    serverToday = kstToday();
     cur = new Date(serverToday);
     buildStrip();
     renderAll();
