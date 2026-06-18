@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="신임관리자과정">
+<meta name="theme-color" content="#f5f4ef">
+<title>제71기 신임관리자과정</title>
+<style>
+:root{
+  --bg-page:#f5f4ef; --bg-card:#ffffff; --bg-soft:#eeee7;
+  --bg-soft:#ebeae3;
+  --text:#1a1a18; --text-sec:#6b6a64; --text-ter:#9a988f;
+  --border:rgba(0,0,0,0.10); --border-soft:rgba(0,0,0,0.06);
+  --accent:#c0613a; --accent-soft:#f7ece6;
+  --warn-bg:#faeeda; --warn-text:#854f0b;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg-page:#1b1b19; --bg-card:#262522; --bg-soft:#302f2b;
+    --text:#f0efe8; --text-sec:#a8a69d; --text-ter:#76746c;
+    --border:rgba(255,255,255,0.12); --border-soft:rgba(255,255,255,0.07);
+    --accent:#e0875f; --accent-soft:#3a2a20;
+    --warn-bg:#463615; --warn-text:#f0c879;
+  }
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,sans-serif;
+  background:var(--bg-page); color:var(--text);
+  display:flex; flex-direction:column; height:100vh; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.header{
+  background:var(--bg-card); border-bottom:0.5px solid var(--border);
+  padding:calc(var(--safe-top) + 14px) 20px 12px; flex-shrink:0;
+}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.header-title{font-size:12px;color:var(--text-sec);font-weight:500;letter-spacing:-0.01em}
+.date-nav{display:flex;align-items:center;gap:6px}
+.nav-btn,.today-btn{
+  background:none;border:0.5px solid var(--border);border-radius:9px;
+  height:30px;display:flex;align-items:center;justify-content:center;
+  color:var(--text-sec);cursor:pointer;font-family:inherit;transition:background .12s;
+}
+.nav-btn{width:30px;font-size:16px}
+.today-btn{padding:0 12px;font-size:12px;font-weight:500}
+.nav-btn:active,.today-btn:active{background:var(--bg-soft)}
+.today-btn.active{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.header-date{font-size:23px;font-weight:600;letter-spacing:-0.02em}
+.header-date .wd{color:var(--accent);margin-left:4px}
+.tabs{display:flex;background:var(--bg-card);border-bottom:0.5px solid var(--border);flex-shrink:0}
+.tab{
+  flex:1;padding:9px 0 7px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:11px;color:var(--text-ter);cursor:pointer;
+  border-bottom:2px solid transparent;transition:color .12s;font-weight:500;
+}
+.tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.tab.active svg{stroke:var(--accent)}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(var(--safe-bottom) + 24px)}
+.pane{display:none;flex-direction:column;gap:11px}
+.pane.active{display:flex}
+.card{
+  background:var(--bg-card);border:0.5px solid var(--border);
+  border-radius:14px;padding:14px 16px;
+}
+.card-head{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.card-head svg{width:15px;height:15px;stroke:var(--text-sec);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card-title{font-size:13px;font-weight:600;color:var(--text)}
+.card-count{margin-left:auto;font-size:11px;color:var(--text-ter);font-weight:500}
+.session{padding:9px 0;border-bottom:0.5px solid var(--border-soft)}
+.session:last-child{border-bottom:none;padding-bottom:0}
+.session:first-of-type{padding-top:0}
+.session-name{font-size:14px;line-height:1.45;font-weight:450;letter-spacing:-0.01em}
+.session-time{font-size:12px;color:var(--text-sec);margin-top:3px;display:flex;align-items:center;gap:4px}
+.session-time svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8}
+.meal-row{display:flex;gap:12px;padding:11px 0;border-bottom:0.5px solid var(--border-soft)}
+.meal-row:last-child{border-bottom:none;padding-bottom:0}
+.meal-row:first-child{padding-top:0}
+.meal-emoji{font-size:21px;line-height:1.2;flex-shrink:0;width:24px;text-align:center}
+.meal-label{font-size:11px;color:var(--text-ter);font-weight:600;margin-bottom:3px;letter-spacing:0.01em}
+.meal-text{font-size:13.5px;line-height:1.5;letter-spacing:-0.01em}
+.deadline-row{display:flex;gap:11px;padding:10px 0;border-bottom:0.5px solid var(--border-soft);align-items:flex-start}
+.deadline-row:last-child{border-bottom:none;padding-bottom:0}
+.deadline-row:first-child{padding-top:0}
+.dl-date{font-size:11px;color:var(--text-sec);font-weight:600;min-width:54px;padding-top:1px}
+.dl-text{font-size:13.5px;line-height:1.45;flex:1;letter-spacing:-0.01em}
+.badge{
+  display:inline-block;padding:2px 8px;border-radius:7px;font-size:11px;font-weight:600;
+  background:var(--warn-bg);color:var(--warn-text);margin-top:5px;
+}
+.empty{text-align:center;padding:40px 16px;color:var(--text-ter);font-size:14px}
+.empty svg{width:34px;height:34px;stroke:var(--text-ter);fill:none;stroke-width:1.4;margin-bottom:10px;opacity:.6}
+.seg{display:flex;gap:4px;background:var(--bg-soft);border-radius:10px;padding:3px;margin-bottom:12px}
+.seg-btn{
+  flex:1;border:none;background:none;padding:7px 0;border-radius:7px;font-size:12.5px;
+  font-weight:500;color:var(--text-sec);cursor:pointer;font-family:inherit;transition:.12s;
+}
+.seg-btn.active{background:var(--bg-card);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.day-group{margin-bottom:2px}
+.day-group-head{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:7px;display:flex;align-items:baseline;gap:6px}
+.day-group-head .dg-wd{color:var(--text-ter);font-weight:500}
+.loading{text-align:center;padding:60px 0;color:var(--text-ter);font-size:14px}
+.skeleton{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span class="header-title">제71기 신임관리자과정</span>
+    <div class="date-nav">
+      <button class="nav-btn" id="prev" aria-label="이전 날"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <button class="today-btn" id="todayBtn">오늘</button>
+      <button class="nav-btn" id="next" aria-label="다음 날"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+  </div>
+  <div class="header-date" id="headerDate">불러오는 중…</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="lecture">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    강의
+  </div>
+  <div class="tab" data-tab="meal">
+    <svg viewBox="0 0 24 24"><path d="M3 11h18a8 8 0 0 1-8 8H11a8 8 0 0 1-8-8z"/><line x1="12" y1="3" x2="12" y2="7"/><line x1="8" y1="4" x2="8" y2="7"/><line x1="16" y1="4" x2="16" y2="7"/></svg>
+    식단
+  </div>
+  <div class="tab" data-tab="todo">
+    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    할일
+  </div>
+</div>
+
+<div class="content">
+  <div class="pane active" id="pane-lecture"><div class="loading skeleton">불러오는 중…</div></div>
+  <div class="pane" id="pane-meal"></div>
+  <div class="pane" id="pane-todo"></div>
+</div>
+
+<script>
+const WD = ['일','월','화','수','목','금','토'];
+let DATA = null;
+let cur = null;
+let serverToday = null;
+
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,'0');
+const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseKey = s => { const [y,m,dd]=s.split('-').map(Number); return new Date(y,m-1,dd); };
+const sameDay = (a,b) => keyOf(a)===keyOf(b);
+const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+const mondayOf = d => { const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); return x; };
+const esc = s => s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function isDeadline(s){ return s.includes('제출') || s.includes('마감'); }
+
+function parseSession(s){
+  const tm = s.match(/(\d{1,2}:\d{2}\s*~\s*\d{1,2}:\d{2})/);
+  let time = tm ? tm[1].replace(/\s+/g,'') : '';
+  let name = s;
+  if(tm) name = s.replace(tm[1],'');
+  name = name.replace(/\(\s*[,)]?\s*\)/g,'').replace(/[\s,(]+$/,'').trim();
+  if(!name) name = s;
+  return { name, time };
+}
+
+function renderDateHeader(){
+  $('#headerDate').innerHTML = `${cur.getFullYear()}년 ${cur.getMonth()+1}월 ${cur.getDate()}일<span class="wd">${WD[cur.getDay()]}</span>`;
+  $('#todayBtn').classList.toggle('active', serverToday && sameDay(cur, serverToday));
+}
+
+function emptyBlock(text, icon){
+  const ic = icon || '<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+  return `<div class="empty"><svg viewBox="0 0 24 24">${ic}</svg><div>${text}</div></div>`;
+}
+
+function renderLecture(){
+  const sessions = DATA.schedule[keyOf(cur)];
+  let html = '';
+  if(sessions === undefined){
+    html = emptyBlock('교육 기간에 포함되지 않은 날짜입니다.');
+  } else {
+    const lectures = sessions.filter(s=>!isDeadline(s));
+    const deadlines = sessions.filter(isDeadline);
+    if(lectures.length === 0 && deadlines.length === 0){
+      html = emptyBlock('이 날은 별도의 강의가 없습니다.');
+    } else {
+      if(lectures.length){
+        html += `<div class="card"><div class="card-head">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span class="card-title">강의 일정</span><span class="card-count">${lectures.length}개</span></div>`;
+        for(const s of lectures){
+          const {name,time} = parseSession(s);
+          html += `<div class="session"><div class="session-name">${esc(name)}</div>`;
+          if(time) html += `<div class="session-time"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>${esc(time)}</div>`;
+          html += `</div>`;
+        }
+        html += `</div>`;
+      }
+      if(deadlines.length){
+        html += `<div class="card"><div class="card-head">
+          <svg viewBox="0 0 24 24"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+          <span class="card-title">오늘 마감</span></div>`;
+        for(const s of deadlines){
+          html += `<div class="session"><div class="session-name">${esc(s)}</div></div>`;
+        }
+        html += `</div>`;
+      }
+    }
+  }
+
+  const upcoming = upcomingDeadlines(cur, 14);
+  if(upcoming.length){
+    html += `<div class="card"><div class="card-head">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+      <span class="card-title">다가오는 마감</span></div>`;
+    for(const u of upcoming){
+      const dd = u.diff===0 ? 'D-day' : `D-${u.diff}`;
+      html += `<div class="deadline-row"><div class="dl-date">${u.md}<br><span style="color:var(--text-ter);font-weight:500">${WD[u.date.getDay()]}</span></div>
+        <div class="dl-text">${esc(u.text)}<br><span class="badge">${dd}</span></div></div>`;
+    }
+    html += `</div>`;
+  }
+  $('#pane-lecture').innerHTML = html;
+}
+
+function upcomingDeadlines(from, days){
+  const out = [];
+  for(let i=1;i<=days;i++){
+    const d = addDays(from,i);
+    const ss = DATA.schedule[keyOf(d)];
+    if(!ss) continue;
+    for(const s of ss){
+      if(isDeadline(s)) out.push({date:d, diff:i, md:`${d.getMonth()+1}.${pad(d.getDate())}`, text:s});
+    }
+  }
+  return out.slice(0,5);
+}
+
+let mealMode = 'day';
+function renderMeal(){
+  let html = `<div class="seg">
+    <button class="seg-btn ${mealMode==='day'?'active':''}" data-m="day">하루</button>
+    <button class="seg-btn ${mealMode==='week'?'active':''}" data-m="week">이번 주</button></div>`;
+
+  const ICONS = {breakfast:'🌅',lunch:'☀️',dinner:'🌙'};
+  const LABELS = {breakfast:'아침',lunch:'점심',dinner:'저녁'};
+  const ORDER = ['breakfast','lunch','dinner'];
+
+  if(mealMode === 'day'){
+    const m = DATA.meals[keyOf(cur)];
+    if(!m){
+      html += emptyBlock('이 날의 식단 정보가 없습니다.', '<path d="M3 11h18a8 8 0 0 1-8 8H11a8 8 0 0 1-8-8z"/><line x1="12" y1="3" x2="12" y2="7"/>');
+    } else {
+      html += `<div class="card">`;
+      for(const k of ORDER){
+        if(!m[k]) continue;
+        html += `<div class="meal-row"><div class="meal-emoji">${ICONS[k]}</div>
+          <div><div class="meal-label">${LABELS[k]}</div><div class="meal-text">${esc(m[k])}</div></div></div>`;
+      }
+      html += `</div>`;
+    }
+  } else {
+    const mon = mondayOf(cur);
+    let any = false;
+    for(let i=0;i<5;i++){
+      const d = addDays(mon,i);
+      const m = DATA.meals[keyOf(d)];
+      if(!m) continue;
+      any = true;
+      html += `<div class="card"><div class="card-head">
+        <span class="card-title">${d.getMonth()+1}.${pad(d.getDate())}</span>
+        <span style="color:var(--accent);font-weight:600;font-size:13px">${WD[d.getDay()]}</span></div>`;
+      for(const k of ORDER){
+        if(!m[k]) continue;
+        html += `<div class="meal-row"><div class="meal-emoji">${ICONS[k]}</div>
+          <div><div class="meal-label">${LABELS[k]}</div><div class="meal-text">${esc(m[k])}</div></div></div>`;
+      }
+      html += `</div>`;
+    }
+    if(!any) html += emptyBlock('이번 주 식단 정보가 아직 없습니다.', '<path d="M3 11h18a8 8 0 0 1-8 8H11a8 8 0 0 1-8-8z"/>');
+  }
+  $('#pane-meal').innerHTML = html;
+  $('#pane-meal').querySelectorAll('.seg-btn').forEach(b=>{
+    b.onclick = ()=>{ mealMode = b.dataset.m; renderMeal(); };
+  });
+}
+
+function weekDeadlines(weekDate){
+  const mon = mondayOf(weekDate);
+  const out = [];
+  const seen = new Set();
+  for(let i=0;i<7;i++){
+    const d = addDays(mon,i);
+    const ss = DATA.schedule[keyOf(d)];
+    if(!ss) continue;
+    for(const s of ss){
+      if(isDeadline(s) && !seen.has(s)){
+        seen.add(s);
+        out.push({md:`${d.getMonth()+1}.${pad(d.getDate())}`, wd:WD[d.getDay()], text:s});
+      }
+    }
+  }
+  return {mon, sun:addDays(mon,6), items:out};
+}
+
+function renderTodo(){
+  let html = '';
+  const blocks = [
+    {label:'이번 주', wk: weekDeadlines(cur)},
+    {label:'다음 주', wk: weekDeadlines(addDays(cur,7))},
+  ];
+  for(const b of blocks){
+    const range = `${b.wk.mon.getMonth()+1}.${pad(b.wk.mon.getDate())}~${b.wk.sun.getMonth()+1}.${pad(b.wk.sun.getDate())}`;
+    html += `<div class="card"><div class="card-head">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="card-title">${b.label}</span><span class="card-count">${range}</span></div>`;
+    if(b.wk.items.length === 0){
+      html += `<div style="font-size:13px;color:var(--text-ter);padding:6px 0">제출/마감 일정이 없습니다.</div>`;
+    } else {
+      for(const it of b.wk.items){
+        html += `<div class="deadline-row"><div class="dl-date">${it.md}<br><span style="color:var(--text-ter);font-weight:500">${it.wd}</span></div>
+          <div class="dl-text">${esc(it.text)}</div></div>`;
+      }
+    }
+    html += `</div>`;
+  }
+  $('#pane-todo').innerHTML = html;
+}
+
+let activeTab = 'lecture';
+function renderAll(){
+  renderDateHeader();
+  if(activeTab==='lecture') renderLecture();
+  else if(activeTab==='meal') renderMeal();
+  else renderTodo();
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    activeTab = t.dataset.tab;
+    $('#pane-'+activeTab).classList.add('active');
+    renderAll();
+  };
+});
+$('#prev').onclick = ()=>{ cur = addDays(cur,-1); renderAll(); };
+$('#next').onclick = ()=>{ cur = addDays(cur,1); renderAll(); };
+$('#todayBtn').onclick = ()=>{ cur = new Date(serverToday); renderAll(); };
+
+async function init(){
+  try{
+    const res = await fetch('/api/data');
+    DATA = await res.json();
+    serverToday = parseKey(DATA.today);
+    cur = new Date(serverToday);
+    renderAll();
+  }catch(e){
+    $('#pane-lecture').innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.<br>잠시 후 다시 시도해주세요.</div>';
+  }
+}
+init();
+</script>
+</body>
+</html>

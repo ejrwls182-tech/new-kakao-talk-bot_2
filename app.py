@@ -29,7 +29,7 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__)
 
@@ -223,6 +223,22 @@ def get_week_meal_text(base_date, label="이번 주"):
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
+
+
+@app.route("/", methods=["GET"])
+def index():
+    """모바일 웹앱 페이지"""
+    return send_from_directory(os.path.dirname(__file__), "index.html")
+
+
+@app.route("/api/data", methods=["GET"])
+def api_data():
+    """웹앱용 데이터 일괄 제공 (강의 일정 + 식단 + 서버 기준 오늘 날짜)"""
+    return jsonify({
+        "today": today_kst().strftime("%Y-%m-%d"),
+        "schedule": load_schedule(),
+        "meals": load_meals(),
+    })
 
 
 @app.route("/skill", methods=["POST"])
