@@ -231,6 +231,12 @@ def index():
     return send_from_directory(os.path.dirname(__file__), "index.html")
 
 
+@app.route("/ladder.html", methods=["GET"])
+def ladder():
+    """사다리타기 웹앱"""
+    return send_from_directory(os.path.dirname(__file__), "ladder.html")
+
+
 @app.route("/schedule.json", methods=["GET"])
 def schedule_json():
     return send_from_directory(os.path.dirname(__file__), "schedule.json")
