@@ -233,12 +233,15 @@ def index():
 
 @app.route("/api/data", methods=["GET"])
 def api_data():
-    """웹앱용 데이터 일괄 제공 (강의 일정 + 식단 + 서버 기준 오늘 날짜)"""
-    return jsonify({
+    """웹앱용 데이터 일괄 제공 (강의 일정 + 식단 + 서버 기준 오늘 날짜).
+    다른 도메인(타 웹앱)에서도 fetch 할 수 있도록 CORS 허용."""
+    resp = jsonify({
         "today": today_kst().strftime("%Y-%m-%d"),
         "schedule": load_schedule(),
         "meals": load_meals(),
     })
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
 
 
 @app.route("/skill", methods=["POST"])

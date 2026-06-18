@@ -40,20 +40,33 @@ body{
   background:var(--bg-card); border-bottom:0.5px solid var(--border);
   padding:calc(var(--safe-top) + 14px) 20px 12px; flex-shrink:0;
 }
-.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .header-title{font-size:12px;color:var(--text-sec);font-weight:500;letter-spacing:-0.01em}
-.date-nav{display:flex;align-items:center;gap:6px}
-.nav-btn,.today-btn{
-  background:none;border:0.5px solid var(--border);border-radius:9px;
-  height:30px;display:flex;align-items:center;justify-content:center;
+.today-btn{
+  background:none;border:0.5px solid var(--border);border-radius:9px;height:28px;
+  padding:0 12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:4px;
   color:var(--text-sec);cursor:pointer;font-family:inherit;transition:background .12s;
 }
-.nav-btn{width:30px;font-size:16px}
-.today-btn{padding:0 12px;font-size:12px;font-weight:500}
-.nav-btn:active,.today-btn:active{background:var(--bg-soft)}
+.today-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.today-btn:active{background:var(--bg-soft)}
 .today-btn.active{background:var(--accent-soft);color:var(--accent);border-color:transparent}
-.header-date{font-size:23px;font-weight:600;letter-spacing:-0.02em}
-.header-date .wd{color:var(--accent);margin-left:4px}
+.header-date{font-size:18px;font-weight:600;letter-spacing:-0.02em;margin-bottom:10px}
+.header-date .wd{color:var(--accent);margin-left:5px}
+.datestrip{display:flex;gap:6px;overflow-x:auto;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;margin:0 -20px;padding:1px 20px 2px}
+.datestrip::-webkit-scrollbar{display:none}
+.datestrip{scrollbar-width:none}
+.dp{
+  flex-shrink:0;width:46px;padding:6px 0 5px;border-radius:12px;cursor:pointer;
+  border:0.5px solid var(--border);background:var(--bg-card);
+  display:flex;flex-direction:column;align-items:center;gap:1px;font-family:inherit;transition:.1s;
+}
+.dp:active{transform:scale(.95)}
+.dp-wd{font-size:11px;color:var(--text-ter);font-weight:500}
+.dp-wd.sun{color:#d8635c}.dp-wd.sat{color:#4a8fcc}
+.dp-dn{font-size:16px;font-weight:600;color:var(--text);line-height:1.1}
+.dp-rel{font-size:9px;font-weight:600;color:var(--accent);min-height:11px;line-height:1.1}
+.dp.active{background:var(--accent);border-color:transparent}
+.dp.active .dp-wd,.dp.active .dp-dn,.dp.active .dp-rel{color:#fff}
 .tabs{display:flex;background:var(--bg-card);border-bottom:0.5px solid var(--border);flex-shrink:0}
 .tab{
   flex:1;padding:9px 0 7px;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -116,13 +129,10 @@ body{
 <div class="header">
   <div class="header-top">
     <span class="header-title">제71기 신임관리자과정</span>
-    <div class="date-nav">
-      <button class="nav-btn" id="prev" aria-label="이전 날"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <button class="today-btn" id="todayBtn">오늘</button>
-      <button class="nav-btn" id="next" aria-label="다음 날"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
-    </div>
+    <button class="today-btn" id="todayBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="15" x2="12.01" y2="15"/></svg>오늘로</button>
   </div>
   <div class="header-date" id="headerDate">불러오는 중…</div>
+  <div class="datestrip" id="datestrip"></div>
 </div>
 
 <div class="tabs">
@@ -174,8 +184,46 @@ function parseSession(s){
 }
 
 function renderDateHeader(){
-  $('#headerDate').innerHTML = `${cur.getFullYear()}년 ${cur.getMonth()+1}월 ${cur.getDate()}일<span class="wd">${WD[cur.getDay()]}</span>`;
+  let rel = '';
+  if(serverToday){
+    const diff = Math.round((cur - serverToday)/86400000);
+    rel = diff===0?' · 오늘':diff===1?' · 내일':diff===2?' · 모레':diff===-1?' · 어제':'';
+  }
+  $('#headerDate').innerHTML = `${cur.getMonth()+1}월 ${cur.getDate()}일<span class="wd">${WD[cur.getDay()]}요일</span><span style="font-size:13px;color:var(--text-ter);font-weight:500">${rel}</span>`;
   $('#todayBtn').classList.toggle('active', serverToday && sameDay(cur, serverToday));
+  updateStrip();
+}
+
+function buildStrip(){
+  const strip = $('#datestrip');
+  strip.innerHTML = '';
+  const start = addDays(serverToday, -3);
+  for(let i=0;i<38;i++){
+    const d = addDays(start, i);
+    const diff = Math.round((d - serverToday)/86400000);
+    const rel = diff===0?'오늘':diff===1?'내일':diff===2?'모레':'';
+    const wdCls = d.getDay()===0?'sun':d.getDay()===6?'sat':'';
+    const el = document.createElement('button');
+    el.className = 'dp';
+    el.dataset.k = keyOf(d);
+    el.innerHTML = `<div class="dp-wd ${wdCls}">${WD[d.getDay()]}</div><div class="dp-dn">${d.getDate()}</div><div class="dp-rel">${rel}</div>`;
+    el.onclick = ()=>{ cur = new Date(d); renderAll(); };
+    strip.appendChild(el);
+  }
+}
+
+function updateStrip(){
+  const k = keyOf(cur);
+  let active = null;
+  $('#datestrip').querySelectorAll('.dp').forEach(el=>{
+    const on = el.dataset.k === k;
+    el.classList.toggle('active', on);
+    if(on) active = el;
+  });
+  if(active){
+    const strip = $('#datestrip');
+    strip.scrollTo({ left: active.offsetLeft - strip.clientWidth/2 + active.clientWidth/2, behavior:'smooth' });
+  }
 }
 
 function emptyBlock(text, icon){
@@ -355,8 +403,6 @@ document.querySelectorAll('.tab').forEach(t=>{
     renderAll();
   };
 });
-$('#prev').onclick = ()=>{ cur = addDays(cur,-1); renderAll(); };
-$('#next').onclick = ()=>{ cur = addDays(cur,1); renderAll(); };
 $('#todayBtn').onclick = ()=>{ cur = new Date(serverToday); renderAll(); };
 
 async function init(){
@@ -365,6 +411,7 @@ async function init(){
     DATA = await res.json();
     serverToday = parseKey(DATA.today);
     cur = new Date(serverToday);
+    buildStrip();
     renderAll();
   }catch(e){
     $('#pane-lecture').innerHTML = '<div class="empty">데이터를 불러오지 못했습니다.<br>잠시 후 다시 시도해주세요.</div>';
