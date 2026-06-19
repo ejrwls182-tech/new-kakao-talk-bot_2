@@ -162,6 +162,63 @@ body{
 .ld-pill.win{background:var(--gold-bg);color:var(--gold-text)}
 .ld-pill.miss{background:var(--miss-bg);color:var(--miss-text)}
 .ld-hint{font-size:12px;color:var(--text-ter);text-align:center;margin-top:10px}
+
+/* ── 오늘의 운세 (포춘쿠키) ───────────────────────────── */
+.header-date-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.header-date{margin-bottom:0}
+.fortune-btn{
+  flex-shrink:0;background:var(--gold-bg);border:0.5px solid var(--gold-line);border-radius:9px;height:28px;
+  padding:0 11px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap;
+  color:var(--gold-text);cursor:pointer;font-family:inherit;transition:transform .12s,filter .12s;
+}
+.fortune-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.fortune-btn:active{transform:scale(.94);filter:brightness(.97)}
+
+.fc-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px}
+.fc-overlay[hidden]{display:none}
+.fc-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.5);opacity:0;transition:opacity .26s}
+.fc-overlay.show .fc-backdrop{opacity:1}
+.fc-modal{position:relative;width:100%;max-width:360px;background:var(--bg-card);border:0.5px solid var(--border);
+  border-radius:20px;padding:22px 20px 20px;box-shadow:0 20px 60px rgba(0,0,0,0.28);
+  transform:translateY(14px) scale(.96);opacity:0;transition:transform .28s cubic-bezier(.2,.85,.25,1),opacity .28s}
+.fc-overlay.show .fc-modal{transform:translateY(0) scale(1);opacity:1}
+.fc-close{position:absolute;top:12px;right:12px;width:30px;height:30px;border:none;background:var(--bg-soft);
+  border-radius:50%;color:var(--text-sec);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.fc-close:active{filter:brightness(.95)}
+.fc-title{font-size:18px;font-weight:700;letter-spacing:-0.02em;text-align:center}
+.fc-sub{font-size:13px;color:var(--text-sec);text-align:center;margin-top:5px;min-height:18px;transition:opacity .2s}
+.fc-cookies{display:flex;gap:14px;justify-content:center;align-items:center;margin:22px 0 6px;min-height:96px}
+.fc-cookie{flex:0 0 auto;width:88px;height:74px;border:none;background:none;padding:0;cursor:pointer;
+  transition:transform .5s cubic-bezier(.2,.85,.25,1),opacity .4s,width .4s,margin .4s;animation:fcFloat 3s ease-in-out infinite}
+.fc-cookie:nth-child(2){animation-delay:.5s}
+.fc-cookie:nth-child(3){animation-delay:1s}
+.fc-cookie:active{transform:scale(.92)}
+.fc-svg{width:100%;height:100%;display:block;overflow:visible}
+.fc-svg .ch path{fill:#ecb963;stroke:#bd8128;stroke-width:2;stroke-linejoin:round}
+.fc-svg .ch .vein{fill:none;stroke:#c98f33;stroke-width:1.4;opacity:.7}
+.fc-svg .fc-paper{fill:#fffaf0;stroke:#e3d6b8;stroke-width:1.2;opacity:0;transform:translateY(6px) scaleY(.3);transform-origin:60px 64px;transition:opacity .35s .35s,transform .45s .3s cubic-bezier(.2,.9,.25,1)}
+.fc-svg .ch{transition:transform .6s cubic-bezier(.3,.7,.2,1)}
+.fc-svg .ch-left{transform-origin:60px 52px}
+.fc-svg .ch-right{transform-origin:60px 52px}
+.fc-cookies.chosen .fc-cookie:not(.sel){opacity:0;transform:scale(.2);width:0;margin:-7px;pointer-events:none;animation:none}
+.fc-cookie.sel{transform:scale(1.45);animation:none;cursor:default}
+.fc-cookie.open .ch-left{transform:translateX(-15px) translateY(-2px) rotate(-15deg)}
+.fc-cookie.open .ch-right{transform:translateX(15px) translateY(-2px) rotate(15deg)}
+.fc-cookie.open .fc-paper{opacity:1;transform:translateY(-10px) scaleY(1)}
+.fc-cookie.open{animation:fcPop .5s ease}
+@keyframes fcFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes fcPop{0%{transform:scale(1.45)}40%{transform:scale(1.62)}100%{transform:scale(1.45)}}
+.fc-fortune{max-height:0;opacity:0;overflow:hidden;transition:max-height .5s ease,opacity .4s ease,margin .4s}
+.fc-fortune.show{max-height:260px;opacity:1;margin-top:8px}
+.fc-fortune-inner{background:var(--gold-bg);border:0.5px solid var(--gold-line);border-radius:14px;padding:16px 16px 17px;text-align:center}
+.fc-cat{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--gold-line);padding:3px 11px;border-radius:20px;margin-bottom:10px}
+.fc-text{font-size:15.5px;line-height:1.55;font-weight:600;color:var(--gold-text);letter-spacing:-0.01em}
+.fc-actions{display:flex;justify-content:center;margin-top:16px;opacity:0;max-height:0;overflow:hidden;transition:opacity .3s,max-height .3s,margin .3s}
+.fc-actions.show{opacity:1;max-height:60px}
+.fc-retry{display:flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:11px;
+  height:42px;padding:0 22px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .12s,filter .12s}
+.fc-retry svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.fc-retry:active{transform:scale(.96);filter:brightness(.95)}
 </style>
 </head>
 <body>
@@ -171,7 +228,12 @@ body{
     <span class="header-title">제71기 신임관리자과정</span>
     <button class="today-btn" id="todayBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="15" x2="12.01" y2="15"/></svg>오늘로</button>
   </div>
-  <div class="header-date" id="headerDate">불러오는 중…</div>
+  <div class="header-date-row" id="headerDateRow">
+    <div class="header-date" id="headerDate">불러오는 중…</div>
+    <button class="fortune-btn" id="fortuneBtn" aria-label="오늘의 운세">
+      <svg viewBox="0 0 24 24"><path d="M4 13c0-1 8-3 16 1 0 0-3 6-8 6S4 14 4 13z"/><path d="M12 14.5c1.5-3 5-4.5 8-.5"/></svg>오늘의 운세
+    </button>
+  </div>
   <div class="datestrip" id="datestrip"></div>
 </div>
 
@@ -243,6 +305,25 @@ body{
     </div>
     <div class="card" id="ld-summaryCard" style="display:none">
       <div id="ld-summary"></div>
+    </div>
+  </div>
+</div>
+
+<div class="fc-overlay" id="fcOverlay" hidden>
+  <div class="fc-backdrop" id="fcBackdrop"></div>
+  <div class="fc-modal" role="dialog" aria-label="오늘의 운세">
+    <button class="fc-close" id="fcClose" aria-label="닫기">✕</button>
+    <div class="fc-title">오늘의 운세</div>
+    <div class="fc-sub" id="fcSub">포춘쿠키 3개 중 하나를 골라보세요</div>
+    <div class="fc-cookies" id="fcCookies"></div>
+    <div class="fc-fortune" id="fcFortune">
+      <div class="fc-fortune-inner">
+        <span class="fc-cat" id="fcCat"></span>
+        <div class="fc-text" id="fcText"></div>
+      </div>
+    </div>
+    <div class="fc-actions" id="fcActions">
+      <button class="fc-retry" id="fcRetry"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a8.5 8.5 0 1 1-2-8.9L23 10"/></svg>다시 뽑기</button>
     </div>
   </div>
 </div>
@@ -489,7 +570,7 @@ function renderTodo(){
 let activeTab = 'lecture';
 function renderAll(){
   const isLadder = activeTab==='ladder';
-  $('#headerDate').style.display = isLadder ? 'none' : '';
+  $('#headerDateRow').style.display = isLadder ? 'none' : '';
   $('#datestrip').style.display = isLadder ? 'none' : '';
   $('#todayBtn').style.display = isLadder ? 'none' : '';
   if(isLadder) return;
@@ -510,6 +591,121 @@ document.querySelectorAll('.tab').forEach(t=>{
   };
 });
 $('#todayBtn').onclick = ()=>{ cur = new Date(serverToday); renderAll(); };
+
+// ---------------------------------------------------------------------------
+// 오늘의 운세 (포춘쿠키) — 전부 클라이언트 처리, 서버 불필요
+// ---------------------------------------------------------------------------
+(function(){
+  const FORTUNES = [
+    {cat:'행운', text:'오늘은 작은 행운이 연이어 찾아오는 날이에요.'},
+    {cat:'행운', text:'기다리던 좋은 소식이 곧 도착합니다.'},
+    {cat:'행운', text:'우연한 만남이 뜻밖의 기회로 이어져요.'},
+    {cat:'행운', text:'오늘 내린 결정이 훗날 신의 한 수가 됩니다.'},
+    {cat:'재물', text:'잊고 있던 곳에서 반가운 이득이 생깁니다.'},
+    {cat:'재물', text:'아껴 쓴 만큼, 곧 두 배로 돌아옵니다.'},
+    {cat:'관계', text:'먼저 건넨 인사가 든든한 인연을 만들어요.'},
+    {cat:'관계', text:'오늘은 당신의 말 한마디가 누군가에게 큰 힘이 됩니다.'},
+    {cat:'관계', text:'오래 연락 못 한 사람에게 먼저 다가가 보세요.'},
+    {cat:'건강', text:'잠깐의 휴식이 하루의 능률을 끌어올립니다.'},
+    {cat:'건강', text:'물 한 잔과 깊은 숨, 오늘의 컨디션을 지켜줘요.'},
+    {cat:'학업', text:'집중이 잘 되는 날, 어려운 문제가 술술 풀립니다.'},
+    {cat:'학업', text:'오늘 외운 것은 오래도록 당신의 무기가 됩니다.'},
+    {cat:'조언', text:'서두르지 마세요. 천천히 가도 충분히 도착합니다.'},
+    {cat:'조언', text:'완벽하지 않아도 괜찮아요. 시작이 곧 절반입니다.'},
+    {cat:'조언', text:'고민될 땐, 처음 마음이 정답인 경우가 많아요.'},
+    {cat:'조언', text:'오늘의 작은 노력이 내일의 큰 차이를 만듭니다.'},
+    {cat:'기회', text:'망설였던 그 일, 지금이 바로 적기예요.'},
+    {cat:'기회', text:'새로운 도전이 당신을 한 뼘 더 키워줍니다.'},
+    {cat:'유머', text:'오늘은 커피가 유난히 맛있을 운세! 한 잔 어때요?'},
+    {cat:'유머', text:'점심 메뉴 고민은 짧게, 맛은 길게 즐기세요.'},
+    {cat:'유머', text:'오늘 웃는 횟수만큼 복이 쌓입니다. 많이 웃으세요!'},
+    {cat:'평온', text:'마음이 잔잔한 하루, 모든 일이 순조롭게 흘러갑니다.'},
+    {cat:'평온', text:'오늘은 무리하지 않아도 되는 날. 흐름에 맡기세요.'},
+  ];
+
+  const COOKIE_SVG = `
+    <svg class="fc-svg" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg">
+      <rect class="fc-paper" x="49" y="40" width="22" height="30" rx="2.5"/>
+      <g class="ch ch-left">
+        <path d="M60,18 C40,9 16,25 23,49 C27,68 51,74 58,57 L60,61 Z"/>
+        <path class="vein" d="M52,24 C40,30 30,40 30,52"/>
+      </g>
+      <g class="ch ch-right">
+        <path d="M60,18 C80,9 104,25 97,49 C93,68 69,74 62,57 L60,61 Z"/>
+        <path class="vein" d="M68,24 C80,30 90,40 90,52"/>
+      </g>
+    </svg>`;
+
+  const $ = s => document.querySelector(s);
+  const overlay=$('#fcOverlay'), cookiesEl=$('#fcCookies'), fortuneEl=$('#fcFortune'),
+        actionsEl=$('#fcActions'), subEl=$('#fcSub'), catEl=$('#fcCat'), textEl=$('#fcText');
+  let busy=false;
+
+  function pickThree(){
+    const pool=[...FORTUNES], out=[];
+    for(let i=0;i<3;i++) out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+    return out;
+  }
+
+  function buildCookies(){
+    const picks=pickThree();
+    cookiesEl.className='fc-cookies';
+    cookiesEl.innerHTML='';
+    picks.forEach(f=>{
+      const b=document.createElement('button');
+      b.className='fc-cookie';
+      b.type='button';
+      b.setAttribute('aria-label','포춘쿠키 열기');
+      b.innerHTML=COOKIE_SVG;
+      b.onclick=()=>choose(b,f);
+      cookiesEl.appendChild(b);
+    });
+  }
+
+  function choose(el,f){
+    if(busy || cookiesEl.classList.contains('chosen')) return;
+    busy=true;
+    cookiesEl.classList.add('chosen');
+    el.classList.add('sel');
+    subEl.textContent='쿠키가 열리는 중…';
+    subEl.style.opacity='.6';
+    setTimeout(()=>{ el.classList.add('open'); }, 430);
+    setTimeout(()=>{
+      catEl.textContent=f.cat;
+      textEl.textContent=f.text;
+      subEl.textContent='오늘 당신을 위한 한마디';
+      subEl.style.opacity='1';
+      fortuneEl.classList.add('show');
+      actionsEl.classList.add('show');
+      busy=false;
+    }, 1050);
+  }
+
+  function reset(){
+    fortuneEl.classList.remove('show');
+    actionsEl.classList.remove('show');
+    subEl.textContent='포춘쿠키 3개 중 하나를 골라보세요';
+    subEl.style.opacity='1';
+    busy=false;
+    buildCookies();
+  }
+
+  function open(){
+    reset();
+    overlay.hidden=false;
+    requestAnimationFrame(()=>overlay.classList.add('show'));
+  }
+  function close(){
+    overlay.classList.remove('show');
+    setTimeout(()=>{ overlay.hidden=true; }, 280);
+  }
+
+  $('#fortuneBtn').onclick=open;
+  $('#fcClose').onclick=close;
+  $('#fcBackdrop').onclick=close;
+  $('#fcRetry').onclick=reset;
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !overlay.hidden) close(); });
+})();
 
 // ---------------------------------------------------------------------------
 // 사다리타기 탭 (독립 스코프)
